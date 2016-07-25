@@ -4,6 +4,8 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
+import android.view.View;
+
 import io.github.mthli.Ninja.R;
 import io.github.mthli.Ninja.Unit.BrowserUnit;
 import io.github.mthli.Ninja.Unit.ViewUnit;
@@ -44,7 +46,7 @@ public class ScreenshotTask extends AsyncTask<Void, Void, Boolean> {
     @Override
     protected Boolean doInBackground(Void... params) {
         try {
-            Bitmap bitmap = ViewUnit.capture(webView, windowWidth, contentHeight, false, Bitmap.Config.ARGB_8888);
+            Bitmap bitmap = ViewUnit.capture((View) webView, windowWidth, contentHeight, false, Bitmap.Config.ARGB_8888);
             path = BrowserUnit.screenshot(context, bitmap, title);
         } catch (Exception e) {
             path = null;

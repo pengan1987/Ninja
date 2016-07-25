@@ -6,15 +6,18 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.webkit.DownloadListener;
 import android.webkit.URLUtil;
+
+import org.xwalk.core.XWalkDownloadListener;
+
 import io.github.mthli.Ninja.R;
 import io.github.mthli.Ninja.Unit.BrowserUnit;
 import io.github.mthli.Ninja.Unit.IntentUnit;
 
-public class NinjaDownloadListener implements DownloadListener {
+public class NinjaDownloadListener extends XWalkDownloadListener implements DownloadListener {
     private Context context;
 
     public NinjaDownloadListener(Context context) {
-        super();
+        super(context);
         this.context = context;
     }
 

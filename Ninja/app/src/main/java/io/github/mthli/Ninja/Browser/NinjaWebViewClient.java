@@ -21,11 +21,12 @@ import io.github.mthli.Ninja.R;
 import io.github.mthli.Ninja.Unit.BrowserUnit;
 import io.github.mthli.Ninja.Unit.IntentUnit;
 import io.github.mthli.Ninja.View.NinjaWebView;
+import io.github.mthli.Ninja.View.NinjaWebViewImpl;
 
 import java.io.ByteArrayInputStream;
 
 public class NinjaWebViewClient extends WebViewClient {
-    private NinjaWebView ninjaWebView;
+    private NinjaWebViewImpl ninjaWebView;
     private Context context;
 
     private AdBlock adBlock;
@@ -40,7 +41,7 @@ public class NinjaWebViewClient extends WebViewClient {
         this.enable = enable;
     }
 
-    public NinjaWebViewClient(NinjaWebView ninjaWebView) {
+    public NinjaWebViewClient(NinjaWebViewImpl ninjaWebView) {
         super();
         this.ninjaWebView = ninjaWebView;
         this.context = ninjaWebView.getContext();

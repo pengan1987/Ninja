@@ -15,6 +15,11 @@ import android.preference.PreferenceManager;
 import android.view.*;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+
+import org.xwalk.core.XWalkNavigationHistory;
+import org.xwalk.core.XWalkSettings;
+import org.xwalk.core.XWalkView;
+
 import io.github.mthli.Ninja.Browser.*;
 import io.github.mthli.Ninja.Database.Record;
 import io.github.mthli.Ninja.Database.RecordAction;
@@ -25,7 +30,7 @@ import io.github.mthli.Ninja.Unit.ViewUnit;
 
 import java.net.URISyntaxException;
 
-public class NinjaWebView extends WebView implements AlbumController {
+public class NinjaXWalkViewImpl extends XWalkView implements NinjaWebView {
     private static final float[] NEGATIVE_COLOR = {
             -1.0f, 0, 0, 0, 255, // Red
             0, -1.0f, 0, 0, 255, // Green
@@ -40,37 +45,47 @@ public class NinjaWebView extends WebView implements AlbumController {
     private int animTime;
 
     private Album album;
-    private NinjaWebViewClient webViewClient;
-    private NinjaWebChromeClient webChromeClient;
+    private NinjaXWalkResClient resClient;
+    private NinjaXWalkUIClient uiClient;
     private NinjaDownloadListener downloadListener;
     private NinjaClickHandler clickHandler;
     private GestureDetector gestureDetector;
 
     private AdBlock adBlock;
+
     public AdBlock getAdBlock() {
         return adBlock;
     }
 
     private boolean foreground;
+
     public boolean isForeground() {
         return foreground;
     }
 
     private String userAgentOriginal;
+
     public String getUserAgentOriginal() {
         return userAgentOriginal;
     }
 
     private BrowserController browserController = null;
+
     public BrowserController getBrowserController() {
         return browserController;
     }
+
     public void setBrowserController(BrowserController browserController) {
         this.browserController = browserController;
         this.album.setBrowserController(browserController);
     }
 
-    public NinjaWebView(Context context) {
+    @Override
+    public void findNext(boolean forward) {
+
+    }
+
+    public NinjaXWalkViewImpl(Context context) {
         super(context); // Cannot create a dialog, the WebView context is not an Activity
 
         this.context = context;
@@ -81,8 +96,8 @@ public class NinjaWebView extends WebView implements AlbumController {
 
         this.adBlock = new AdBlock(this.context);
         this.album = new Album(this.context, this, this.browserController);
-        this.webViewClient = new NinjaWebViewClient(this);
-        this.webChromeClient = new NinjaWebChromeClient(this);
+        this.resClient = new NinjaXWalkResClient(this);
+        this.uiClient = new NinjaXWalkUIClient(this);
         this.downloadListener = new NinjaDownloadListener(this.context);
         this.clickHandler = new NinjaClickHandler(this);
         this.gestureDetector = new GestureDetector(context, new NinjaGestureListener(this));
@@ -111,8 +126,8 @@ public class NinjaWebView extends WebView implements AlbumController {
         setVerticalScrollBarEnabled(false);
         setScrollbarFadingEnabled(true);
 
-        setWebViewClient(webViewClient);
-        setWebChromeClient(webChromeClient);
+        setResourceClient(resClient);
+        setUIClient(uiClient);
         setDownloadListener(downloadListener);
         setOnTouchListener(new OnTouchListener() {
             @Override
@@ -124,58 +139,34 @@ public class NinjaWebView extends WebView implements AlbumController {
     }
 
     private synchronized void initWebSettings() {
-        WebSettings webSettings = getSettings();
+        XWalkSettings webSettings = getSettings();
         userAgentOriginal = webSettings.getUserAgentString();
-
-        webSettings.setAllowContentAccess(true);
-        webSettings.setAllowFileAccess(true);
-        webSettings.setAllowFileAccessFromFileURLs(true);
-        webSettings.setAllowUniversalAccessFromFileURLs(true);
-
-        webSettings.setAppCacheEnabled(true);
-        webSettings.setAppCachePath(context.getCacheDir().toString());
-        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        webSettings.setDatabaseEnabled(true);
-        webSettings.setDomStorageEnabled(true);
-        webSettings.setGeolocationDatabasePath(context.getFilesDir().toString());
 
         webSettings.setSupportZoom(true);
         webSettings.setBuiltInZoomControls(true);
-        webSettings.setDisplayZoomControls(false);
 
-        webSettings.setDefaultTextEncodingName(BrowserUnit.URL_ENCODING);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            webSettings.setLoadsImagesAutomatically(true);
-        } else {
-            webSettings.setLoadsImagesAutomatically(false);
-        }
+        webSettings.setAcceptLanguages(BrowserUnit.URL_ENCODING);
     }
 
     public synchronized void initPreferences() {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
-        WebSettings webSettings = getSettings();
+        XWalkSettings webSettings = getSettings();
 
-        webSettings.setLoadWithOverviewMode(true);
         webSettings.setTextZoom(100);
         webSettings.setUseWideViewPort(true);
 
-        webSettings.setBlockNetworkImage(!sp.getBoolean(context.getString(R.string.sp_images), true));
-        webSettings.setJavaScriptEnabled(sp.getBoolean(context.getString(R.string.sp_javascript), true));
-        webSettings.setJavaScriptCanOpenWindowsAutomatically(sp.getBoolean(context.getString(R.string.sp_javascript), true));
-        webSettings.setGeolocationEnabled(sp.getBoolean(context.getString(R.string.sp_location), true));
-        webSettings.setSupportMultipleWindows(sp.getBoolean(context.getString(R.string.sp_multiple_windows), false));
-        webSettings.setSaveFormData(sp.getBoolean(context.getString(R.string.sp_passwords), true));
 
         boolean textReflow = sp.getBoolean(context.getString(R.string.sp_text_reflow), true);
         if (textReflow) {
-            webSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NARROW_COLUMNS);
+            webSettings.setLayoutAlgorithm(XWalkSettings.LayoutAlgorithm.NARROW_COLUMNS);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 try {
-                    webSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
-                } catch (Exception e) {}
+                    webSettings.setLayoutAlgorithm(XWalkSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
+                } catch (Exception e) {
+                }
             }
         } else {
-            webSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
+            webSettings.setLayoutAlgorithm(XWalkSettings.LayoutAlgorithm.NORMAL);
         }
 
         int userAgent = Integer.valueOf(sp.getString(context.getString(R.string.sp_user_agent), "0"));
@@ -189,8 +180,6 @@ public class NinjaWebView extends WebView implements AlbumController {
 
         int mode = Integer.valueOf(sp.getString(context.getString(R.string.sp_rendering), "0"));
         initRendering(mode);
-
-        webViewClient.enableAdBlock(sp.getBoolean(context.getString(R.string.sp_ad_block), true));
     }
 
     private synchronized void initAlbum() {
@@ -206,17 +195,20 @@ public class NinjaWebView extends WebView implements AlbumController {
             case 0: { // Default
                 paint.setColorFilter(null);
                 break;
-            } case 1: { // Grayscale
+            }
+            case 1: { // Grayscale
                 ColorMatrix matrix = new ColorMatrix();
                 matrix.setSaturation(0);
                 ColorMatrixColorFilter filter = new ColorMatrixColorFilter(matrix);
                 paint.setColorFilter(filter);
                 break;
-            } case 2: { // Inverted
+            }
+            case 2: { // Inverted
                 ColorMatrixColorFilter filter = new ColorMatrixColorFilter(NEGATIVE_COLOR);
                 paint.setColorFilter(filter);
                 break;
-            } case 3: { // Inverted grayscale
+            }
+            case 3: { // Inverted grayscale
                 ColorMatrix matrix = new ColorMatrix();
                 matrix.set(NEGATIVE_COLOR);
 
@@ -230,7 +222,8 @@ public class NinjaWebView extends WebView implements AlbumController {
                 paint.setColorFilter(filter);
 
                 break;
-            } default: {
+            }
+            default: {
                 paint.setColorFilter(null);
                 break;
             }
@@ -259,13 +252,14 @@ public class NinjaWebView extends WebView implements AlbumController {
             try {
                 intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
                 context.startActivity(intent);
-            } catch (URISyntaxException u) {}
+            } catch (URISyntaxException u) {
+            }
 
             return;
         }
 
-        webViewClient.updateWhite(adBlock.isWhite(url));
-        super.loadUrl(url);
+
+        super.load(url,null);
         if (browserController != null && foreground) {
             browserController.updateBookmarks();
         }
@@ -273,8 +267,12 @@ public class NinjaWebView extends WebView implements AlbumController {
 
     @Override
     public void reload() {
-        webViewClient.updateWhite(adBlock.isWhite(getUrl()));
-        super.reload();
+        super.reload(RELOAD_NORMAL);
+    }
+
+    @Override
+    public void findAllAsync(String find) {
+
     }
 
     @Override
@@ -341,7 +339,7 @@ public class NinjaWebView extends WebView implements AlbumController {
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    setAlbumCover(ViewUnit.capture(NinjaWebView.this, dimen144dp, dimen108dp, false, Bitmap.Config.RGB_565));
+                    setAlbumCover(ViewUnit.capture(NinjaXWalkViewImpl.this, dimen144dp, dimen108dp, false, Bitmap.Config.RGB_565));
                 }
             }, animTime);
 
@@ -364,24 +362,44 @@ public class NinjaWebView extends WebView implements AlbumController {
     }
 
     public synchronized void pause() {
-        onPause();
+
         pauseTimers();
     }
 
     public synchronized void resume() {
-        onResume();
+
         resumeTimers();
     }
 
     @Override
     public synchronized void destroy() {
         stopLoading();
-        onPause();
-        clearHistory();
+
+        getNavigationHistory().clear();
         setVisibility(GONE);
         removeAllViews();
         destroyDrawingCache();
-        super.destroy();
+        super.onDestroy();
+    }
+
+    @Override
+    public int getProgress() {
+        return resClient.getProgress();
+    }
+
+    @Override
+    public WebView.HitTestResult getHitTestResult() {
+        return null;
+    }
+
+    @Override
+    public boolean canGoBack() {
+        return getNavigationHistory().canGoBack();
+    }
+
+    @Override
+    public void goBack() {
+        getNavigationHistory().navigate(XWalkNavigationHistory.Direction.BACKWARD,1);
     }
 
     public boolean isLoadFinish() {
@@ -393,7 +411,7 @@ public class NinjaWebView extends WebView implements AlbumController {
         if (click != null) {
             click.setTarget(clickHandler);
         }
-        requestFocusNodeHref(click);
+        //requestFocusNodeHref(click);
     }
 
     private boolean prepareRecord() {
@@ -410,5 +428,10 @@ public class NinjaWebView extends WebView implements AlbumController {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public int getContentHeight() {
+        return 0;
     }
 }

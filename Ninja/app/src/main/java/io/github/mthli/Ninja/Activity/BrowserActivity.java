@@ -49,10 +49,11 @@ import io.github.mthli.Ninja.Unit.IntentUnit;
 import io.github.mthli.Ninja.Unit.ViewUnit;
 import io.github.mthli.Ninja.View.*;
 import org.askerov.dynamicgrid.DynamicGridView;
+import org.xwalk.core.XWalkActivity;
 
 import java.util.*;
 
-public class BrowserActivity extends Activity implements BrowserController {
+public class BrowserActivity extends XWalkActivity implements BrowserController {
     // Sync with NinjaToast.show() 2000ms delay
     private static final int DOUBLE_TAPS_QUIT_DEFAULT = 2000;
 
@@ -121,6 +122,11 @@ public class BrowserActivity extends Activity implements BrowserController {
     }
 
     @Override
+    protected void onXWalkReady() {
+        dispatchIntent(getIntent());
+    }
+
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -171,7 +177,7 @@ public class BrowserActivity extends Activity implements BrowserController {
         contentFrame = (FrameLayout) findViewById(R.id.main_content);
 
         new AdBlock(this); // For AdBlock cold boot
-        dispatchIntent(getIntent());
+
     }
 
     @Override
@@ -768,12 +774,12 @@ public class BrowserActivity extends Activity implements BrowserController {
     }
 
     private synchronized void addAlbum(String title, final String url, final boolean foreground, final Message resultMsg) {
-        final NinjaWebView webView = new NinjaWebView(this);
+        final NinjaWebView webView = new NinjaXWalkViewImpl(this);
         webView.setBrowserController(this);
         webView.setFlag(BrowserUnit.FLAG_NINJA);
-        webView.setAlbumCover(ViewUnit.capture(webView, dimen144dp, dimen108dp, false, Bitmap.Config.RGB_565));
+        webView.setAlbumCover(ViewUnit.capture((View) webView, dimen144dp, dimen108dp, false, Bitmap.Config.RGB_565));
         webView.setAlbumTitle(title);
-        ViewUnit.bound(this, webView);
+        ViewUnit.bound(this, (View) webView);
 
         final View albumView = webView.getAlbumView();
         if (currentAlbumController != null && (currentAlbumController instanceof NinjaWebView) && resultMsg != null) {
@@ -786,7 +792,7 @@ public class BrowserActivity extends Activity implements BrowserController {
         }
 
         if (!foreground) {
-            ViewUnit.bound(this, webView);
+            ViewUnit.bound(this, (View) webView);
             webView.loadUrl(url);
             webView.deactivate();
 
@@ -817,7 +823,7 @@ public class BrowserActivity extends Activity implements BrowserController {
                     webView.loadUrl(url);
                 } else if (resultMsg != null) {
                     WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
-                    transport.setWebView(webView);
+                    transport.setWebView((WebView) webView);
                     resultMsg.sendToTarget();
                 }
             }
@@ -864,12 +870,12 @@ public class BrowserActivity extends Activity implements BrowserController {
                 }
             }, shortAnimTime);
         } else { // When url != null
-            NinjaWebView webView = new NinjaWebView(this);
+            NinjaWebView webView = new NinjaXWalkViewImpl(this);
             webView.setBrowserController(this);
             webView.setFlag(BrowserUnit.FLAG_NINJA);
-            webView.setAlbumCover(ViewUnit.capture(webView, dimen144dp, dimen108dp, false, Bitmap.Config.RGB_565));
+            webView.setAlbumCover(ViewUnit.capture((View) webView, dimen144dp, dimen108dp, false, Bitmap.Config.RGB_565));
             webView.setAlbumTitle(getString(R.string.album_untitled));
-            ViewUnit.bound(this, webView);
+            ViewUnit.bound(this, (View) webView);
             webView.loadUrl(url);
 
             BrowserContainer.add(webView);
@@ -877,7 +883,7 @@ public class BrowserActivity extends Activity implements BrowserController {
             albumView.setVisibility(View.VISIBLE);
             switcherContainer.addView(albumView, LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             contentFrame.removeAllViews();
-            contentFrame.addView(webView);
+            contentFrame.addView((View) webView);
 
             if (currentAlbumController != null) {
                 currentAlbumController.deactivate();
@@ -982,12 +988,12 @@ public class BrowserActivity extends Activity implements BrowserController {
             ((NinjaWebView) currentAlbumController).loadUrl(url);
             updateOmnibox();
         } else if (currentAlbumController instanceof NinjaRelativeLayout) {
-            NinjaWebView webView = new NinjaWebView(this);
+            NinjaWebView webView = new NinjaXWalkViewImpl(this);
             webView.setBrowserController(this);
             webView.setFlag(BrowserUnit.FLAG_NINJA);
-            webView.setAlbumCover(ViewUnit.capture(webView, dimen144dp, dimen108dp, false, Bitmap.Config.RGB_565));
+            webView.setAlbumCover(ViewUnit.capture((View) webView, dimen144dp, dimen108dp, false, Bitmap.Config.RGB_565));
             webView.setAlbumTitle(getString(R.string.album_untitled));
-            ViewUnit.bound(this, webView);
+            ViewUnit.bound(this, (View) webView);
 
             int index = switcherContainer.indexOfChild(currentAlbumController.getAlbumView());
             currentAlbumController.deactivate();
@@ -995,7 +1001,7 @@ public class BrowserActivity extends Activity implements BrowserController {
             contentFrame.removeAllViews(); ///
 
             switcherContainer.addView(webView.getAlbumView(), index, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-            contentFrame.addView(webView);
+            contentFrame.addView((View) webView);
             BrowserContainer.set(webView, index);
             currentAlbumController = webView;
             webView.activate();
@@ -1528,7 +1534,7 @@ public class BrowserActivity extends Activity implements BrowserController {
                     } else {
                         String title = ninjaWebView.getTitle().trim();
                         String url = ninjaWebView.getUrl().trim();
-                        Bitmap bitmap = ViewUnit.capture(ninjaWebView, dimen156dp, dimen117dp, false, Bitmap.Config.ARGB_8888);
+                        Bitmap bitmap = ViewUnit.capture((View) ninjaWebView, dimen156dp, dimen117dp, false, Bitmap.Config.ARGB_8888);
                         String filename = System.currentTimeMillis() + BrowserUnit.SUFFIX_PNG;
                         int ordinal = action.listGrid().size();
                         GridItem item = new GridItem(title, url, filename, ordinal);
