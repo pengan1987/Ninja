@@ -13,10 +13,10 @@ import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
 import android.view.*;
-import android.webkit.WebSettings;
 import android.webkit.WebView;
 
 import org.xwalk.core.XWalkNavigationHistory;
+import org.xwalk.core.XWalkPreferences;
 import org.xwalk.core.XWalkSettings;
 import org.xwalk.core.XWalkView;
 
@@ -30,7 +30,7 @@ import io.github.mthli.Ninja.Unit.ViewUnit;
 
 import java.net.URISyntaxException;
 
-public class NinjaXWalkViewImpl extends XWalkView implements NinjaWebView {
+public class NinjaXWalkView extends XWalkView implements AlbumController {
     private static final float[] NEGATIVE_COLOR = {
             -1.0f, 0, 0, 0, 255, // Red
             0, -1.0f, 0, 0, 255, // Green
@@ -47,7 +47,7 @@ public class NinjaXWalkViewImpl extends XWalkView implements NinjaWebView {
     private Album album;
     private NinjaXWalkResClient resClient;
     private NinjaXWalkUIClient uiClient;
-    private NinjaDownloadListener downloadListener;
+    private NinjaXWalkDownloadListener downloadListener;
     private NinjaClickHandler clickHandler;
     private GestureDetector gestureDetector;
 
@@ -80,12 +80,8 @@ public class NinjaXWalkViewImpl extends XWalkView implements NinjaWebView {
         this.album.setBrowserController(browserController);
     }
 
-    @Override
-    public void findNext(boolean forward) {
 
-    }
-
-    public NinjaXWalkViewImpl(Context context) {
+    public NinjaXWalkView(Context context) {
         super(context); // Cannot create a dialog, the WebView context is not an Activity
 
         this.context = context;
@@ -98,7 +94,7 @@ public class NinjaXWalkViewImpl extends XWalkView implements NinjaWebView {
         this.album = new Album(this.context, this, this.browserController);
         this.resClient = new NinjaXWalkResClient(this);
         this.uiClient = new NinjaXWalkUIClient(this);
-        this.downloadListener = new NinjaDownloadListener(this.context);
+        this.downloadListener = new NinjaXWalkDownloadListener(this.context);
         this.clickHandler = new NinjaClickHandler(this);
         this.gestureDetector = new GestureDetector(context, new NinjaGestureListener(this));
 
@@ -128,6 +124,7 @@ public class NinjaXWalkViewImpl extends XWalkView implements NinjaWebView {
 
         setResourceClient(resClient);
         setUIClient(uiClient);
+        //
         setDownloadListener(downloadListener);
         setOnTouchListener(new OnTouchListener() {
             @Override
@@ -146,6 +143,7 @@ public class NinjaXWalkViewImpl extends XWalkView implements NinjaWebView {
         webSettings.setBuiltInZoomControls(true);
 
         webSettings.setAcceptLanguages(BrowserUnit.URL_ENCODING);
+        XWalkPreferences.setValue(XWalkPreferences.REMOTE_DEBUGGING, true);
     }
 
     public synchronized void initPreferences() {
@@ -233,7 +231,7 @@ public class NinjaXWalkViewImpl extends XWalkView implements NinjaWebView {
         setLayerType(View.LAYER_TYPE_HARDWARE, paint);
     }
 
-    @Override
+
     public synchronized void loadUrl(String url) {
         if (url == null || url.trim().isEmpty()) {
             NinjaToast.show(context, R.string.toast_load_error);
@@ -258,19 +256,19 @@ public class NinjaXWalkViewImpl extends XWalkView implements NinjaWebView {
             return;
         }
 
-
-        super.load(url,null);
+        resClient.updateWhite(adBlock.isWhite(url));
+        super.load(url, null);
         if (browserController != null && foreground) {
             browserController.updateBookmarks();
         }
     }
 
-    @Override
     public void reload() {
+        resClient.updateWhite(adBlock.isWhite(getUrl()));
         super.reload(RELOAD_NORMAL);
     }
 
-    @Override
+
     public void findAllAsync(String find) {
 
     }
@@ -323,8 +321,8 @@ public class NinjaXWalkViewImpl extends XWalkView implements NinjaWebView {
         if (foreground) {
             browserController.updateProgress(progress);
         }
-
-        setAlbumCover(ViewUnit.capture(this, dimen144dp, dimen108dp, false, Bitmap.Config.RGB_565));
+        //TODO: capture function not work with XWalk
+        //setAlbumCover(ViewUnit.capture(this, dimen144dp, dimen108dp, false, Bitmap.Config.RGB_565));
         if (isLoadFinish()) {
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
             if (sp.getBoolean(context.getString(R.string.sp_scroll_bar), true)) {
@@ -339,7 +337,7 @@ public class NinjaXWalkViewImpl extends XWalkView implements NinjaWebView {
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    setAlbumCover(ViewUnit.capture(NinjaXWalkViewImpl.this, dimen144dp, dimen108dp, false, Bitmap.Config.RGB_565));
+                    setAlbumCover(ViewUnit.capture(NinjaXWalkView.this, dimen144dp, dimen108dp, false, Bitmap.Config.RGB_565));
                 }
             }, animTime);
 
@@ -371,7 +369,7 @@ public class NinjaXWalkViewImpl extends XWalkView implements NinjaWebView {
         resumeTimers();
     }
 
-    @Override
+
     public synchronized void destroy() {
         stopLoading();
 
@@ -382,24 +380,24 @@ public class NinjaXWalkViewImpl extends XWalkView implements NinjaWebView {
         super.onDestroy();
     }
 
-    @Override
+
     public int getProgress() {
         return resClient.getProgress();
     }
 
-    @Override
+
     public WebView.HitTestResult getHitTestResult() {
         return null;
     }
 
-    @Override
+
     public boolean canGoBack() {
         return getNavigationHistory().canGoBack();
     }
 
-    @Override
+
     public void goBack() {
-        getNavigationHistory().navigate(XWalkNavigationHistory.Direction.BACKWARD,1);
+        getNavigationHistory().navigate(XWalkNavigationHistory.Direction.BACKWARD, 0);
     }
 
     public boolean isLoadFinish() {
@@ -430,8 +428,8 @@ public class NinjaXWalkViewImpl extends XWalkView implements NinjaWebView {
         return true;
     }
 
-    @Override
+
     public int getContentHeight() {
-        return 0;
+        return getMeasuredHeight();
     }
 }

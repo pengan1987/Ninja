@@ -1,11 +1,14 @@
 package io.github.mthli.Ninja.View;
 
 import android.content.Context;
+import android.os.Looper;
 import android.text.Html;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
+
 import io.github.mthli.Ninja.Database.Record;
 import io.github.mthli.Ninja.R;
 import io.github.mthli.Ninja.Unit.BrowserUnit;
@@ -60,19 +63,23 @@ public class CompleteAdapter extends BaseAdapter implements Filterable {
 
     private class CompleteItem {
         private String title;
+
         protected String getTitle() {
             return title;
         }
 
         private String url;
+
         protected String getURL() {
             return url;
         }
 
         private int index = Integer.MAX_VALUE;
+
         protected int getIndex() {
             return index;
         }
+
         protected void setIndex(int index) {
             this.index = index;
         }

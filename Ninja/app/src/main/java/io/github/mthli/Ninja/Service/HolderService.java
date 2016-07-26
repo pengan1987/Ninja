@@ -10,6 +10,7 @@ import android.view.View;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
+
 import io.github.mthli.Ninja.Browser.AlbumController;
 import io.github.mthli.Ninja.Browser.BrowserContainer;
 import io.github.mthli.Ninja.Browser.BrowserController;
@@ -17,35 +18,44 @@ import io.github.mthli.Ninja.R;
 import io.github.mthli.Ninja.Unit.*;
 import io.github.mthli.Ninja.View.NinjaContextWrapper;
 import io.github.mthli.Ninja.View.NinjaWebView;
-import io.github.mthli.Ninja.View.NinjaWebViewImpl;
+import io.github.mthli.Ninja.View.NinjaXWalkView;
 
 public class HolderService extends Service implements BrowserController {
     @Override
-    public void updateAutoComplete() {}
+    public void updateAutoComplete() {
+    }
 
     @Override
-    public void updateBookmarks() {}
+    public void updateBookmarks() {
+    }
 
     @Override
-    public void updateInputBox(String query) {}
+    public void updateInputBox(String query) {
+    }
 
     @Override
-    public void updateProgress(int progress) {}
+    public void updateProgress(int progress) {
+    }
 
     @Override
-    public void showAlbum(AlbumController albumController, boolean anim, boolean expand, boolean capture) {}
+    public void showAlbum(AlbumController albumController, boolean anim, boolean expand, boolean capture) {
+    }
 
     @Override
-    public void removeAlbum(AlbumController albumController) {}
+    public void removeAlbum(AlbumController albumController) {
+    }
 
     @Override
-    public void openFileChooser(ValueCallback<Uri> uploadMsg) {}
+    public void openFileChooser(ValueCallback<Uri> uploadMsg) {
+    }
 
     @Override
-    public void showFileChooser(ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams) {}
+    public void showFileChooser(ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams) {
+    }
 
     @Override
-    public void onCreateView(WebView view, Message resultMsg) {}
+    public void onCreateView(WebView view, Message resultMsg) {
+    }
 
     @Override
     public boolean onShowCustomView(View view, int requestedOrientation, WebChromeClient.CustomViewCallback callback) {
@@ -63,18 +73,28 @@ public class HolderService extends Service implements BrowserController {
     }
 
     @Override
-    public void onLongPress(String url) {}
+    public void onLongPress(String url) {
+    }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        NinjaWebView webView = new NinjaWebViewImpl(new NinjaContextWrapper(this));
-        webView.setBrowserController(this);
+        AlbumController webView;
+        if (XWalkDetector.detect(this))
+            webView = new NinjaXWalkView(new NinjaContextWrapper(this));
+        else
+            webView = new NinjaWebView(new NinjaContextWrapper(this));
+        if (webView instanceof NinjaXWalkView)
+            ((NinjaXWalkView) webView).setBrowserController(this);
+        else
+            ((NinjaWebView) webView).setBrowserController(this);
         webView.setFlag(BrowserUnit.FLAG_NINJA);
         webView.setAlbumCover(null);
         webView.setAlbumTitle(getString(R.string.album_untitled));
         ViewUnit.bound(this, (View) webView);
-
-        webView.loadUrl(RecordUnit.getHolder().getURL());
+        if (webView instanceof NinjaXWalkView)
+            ((NinjaXWalkView) webView).loadUrl(RecordUnit.getHolder().getURL());
+        else
+            ((NinjaWebView) webView).loadUrl(RecordUnit.getHolder().getURL());
         webView.deactivate();
 
         BrowserContainer.add(webView);

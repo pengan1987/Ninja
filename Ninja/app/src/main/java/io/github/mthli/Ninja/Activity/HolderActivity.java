@@ -9,9 +9,13 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.FrameLayout;
 import android.widget.ListView;
+
+import org.xwalk.core.XWalkActivity;
+
 import io.github.mthli.Ninja.Database.Record;
 import io.github.mthli.Ninja.R;
 import io.github.mthli.Ninja.Service.HolderService;
+import io.github.mthli.Ninja.Service.XWalkDetector;
 import io.github.mthli.Ninja.Unit.BrowserUnit;
 import io.github.mthli.Ninja.Unit.IntentUnit;
 import io.github.mthli.Ninja.Unit.RecordUnit;
@@ -132,7 +136,11 @@ public class HolderActivity extends Activity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 switch (position) {
                     case 0:
-                        Intent toActivity = new Intent(HolderActivity.this, BrowserActivity.class);
+                        Intent toActivity;
+                        if (XWalkDetector.detect(HolderActivity.this))
+                            toActivity = new Intent(HolderActivity.this, XWalkBrowserActivity.class);
+                        else
+                            toActivity = new Intent(HolderActivity.this, BrowserActivity.class);
                         toActivity.putExtra(IntentUnit.OPEN, first.getURL());
                         startActivity(toActivity);
                         break;

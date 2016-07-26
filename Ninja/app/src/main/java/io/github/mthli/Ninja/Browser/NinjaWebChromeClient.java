@@ -5,12 +5,11 @@ import android.os.Message;
 import android.view.View;
 import android.webkit.*;
 import io.github.mthli.Ninja.View.NinjaWebView;
-import io.github.mthli.Ninja.View.NinjaWebViewImpl;
 
 public class NinjaWebChromeClient extends WebChromeClient {
-    private NinjaWebViewImpl ninjaWebView;
+    private NinjaWebView ninjaWebView;
 
-    public NinjaWebChromeClient(NinjaWebViewImpl ninjaWebView) {
+    public NinjaWebChromeClient(NinjaWebView ninjaWebView) {
         super();
         this.ninjaWebView = ninjaWebView;
     }

@@ -6,22 +6,24 @@ import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.view.View;
 
+import io.github.mthli.Ninja.Browser.AlbumController;
 import io.github.mthli.Ninja.R;
 import io.github.mthli.Ninja.Unit.BrowserUnit;
 import io.github.mthli.Ninja.Unit.ViewUnit;
 import io.github.mthli.Ninja.View.NinjaToast;
 import io.github.mthli.Ninja.View.NinjaWebView;
+import io.github.mthli.Ninja.View.NinjaXWalkView;
 
 public class ScreenshotTask extends AsyncTask<Void, Void, Boolean> {
     private Context context;
     private ProgressDialog dialog;
-    private NinjaWebView webView;
+    private AlbumController webView;
     private int windowWidth;
     private float contentHeight;
     private String title;
     private String path;
 
-    public ScreenshotTask(Context context, NinjaWebView webView) {
+    public ScreenshotTask(Context context, AlbumController webView) {
         this.context = context;
         this.dialog = null;
         this.webView = webView;
@@ -39,8 +41,13 @@ public class ScreenshotTask extends AsyncTask<Void, Void, Boolean> {
         dialog.show();
 
         windowWidth = ViewUnit.getWindowWidth(context);
-        contentHeight = webView.getContentHeight() * ViewUnit.getDensity(context);
-        title = webView.getTitle();
+        if (webView instanceof NinjaWebView) {
+            title = ((NinjaWebView) webView).getTitle();
+            contentHeight = ((NinjaWebView) webView).getContentHeight() * ViewUnit.getDensity(context);
+        } else {
+            contentHeight = ((NinjaXWalkView) webView).getContentHeight() * ViewUnit.getDensity(context);
+            title = ((NinjaXWalkView) webView).getTitle();
+        }
     }
 
     @Override
